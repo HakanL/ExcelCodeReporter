@@ -9,22 +9,21 @@ namespace Haukcode.ExcelCodeReporter
 {
     public class ExcelWriter : IDisposable
     {
+        private Dictionary<int, WorksheetData> worksheetData;
+        private Action<ExcelStyle> currentHeaderStyle;
         private ExcelPackage excelPackage;
         private ExcelWorksheet backer;
-        private Action<ExcelStyle> currentHeaderStyle;
         private string title;
-
-        private Dictionary<int, WorksheetData> WorksheetData { get; set; }
 
         public ExcelWriter()
         {
-            this.WorksheetData = new Dictionary<int, WorksheetData>();
+            this.worksheetData = new Dictionary<int, WorksheetData>();
             this.excelPackage = new ExcelPackage();
         }
 
         private void SetWorksheetData(int worksheetIndex, int firstHeaderRow, int lastHeaderRow, int currentRow)
         {
-            if (this.WorksheetData.TryGetValue(worksheetIndex, out var data))
+            if (this.worksheetData.TryGetValue(worksheetIndex, out var data))
             {
                 data.FirstHeaderRow = firstHeaderRow;
                 data.LastHeaderRow = lastHeaderRow;
@@ -32,7 +31,7 @@ namespace Haukcode.ExcelCodeReporter
             }
             else
             {
-                this.WorksheetData.Add(worksheetIndex, new WorksheetData
+                this.worksheetData.Add(worksheetIndex, new WorksheetData
                 {
                     FirstHeaderRow = firstHeaderRow,
                     LastHeaderRow = lastHeaderRow,
@@ -43,7 +42,7 @@ namespace Haukcode.ExcelCodeReporter
 
         public ExcelWriter(Stream input, string title, int worksheetIndex = 1)
         {
-            this.WorksheetData = new Dictionary<int, WorksheetData>();
+            this.worksheetData = new Dictionary<int, WorksheetData>();
             this.title = title;
             this.excelPackage = new ExcelPackage(input);
 
@@ -114,7 +113,7 @@ namespace Haukcode.ExcelCodeReporter
 
         public Row AddHeaderRow(double? height = null, Action<ExcelStyle> style = null, int? row = null)
         {
-            var data = WorksheetData[this.Backer.Index];
+            var data = this.worksheetData[this.Backer.Index];
 
             if (row.HasValue)
                 data.CurrentRow = row.Value;
@@ -141,7 +140,7 @@ namespace Haukcode.ExcelCodeReporter
 
         public void SetHeaderRow(int row)
         {
-            var data = WorksheetData[this.Backer.Index];
+            var data = this.worksheetData[this.Backer.Index];
 
             data.CurrentRow = row;
 
@@ -164,7 +163,7 @@ namespace Haukcode.ExcelCodeReporter
 
         public Row AddRow(Action<ExcelStyle> style = null, int? row = null)
         {
-            var data = WorksheetData[this.Backer.Index];
+            var data = this.worksheetData[this.Backer.Index];
 
             if (row.HasValue)
                 data.CurrentRow = row.Value;
@@ -178,7 +177,7 @@ namespace Haukcode.ExcelCodeReporter
 
         public Row AddRow(object value, Action<ExcelStyle> style = null, int? row = null)
         {
-            var data = WorksheetData[this.Backer.Index];
+            var data = this.worksheetData[this.Backer.Index];
 
             if (row.HasValue)
                 data.CurrentRow = row.Value;
@@ -194,7 +193,7 @@ namespace Haukcode.ExcelCodeReporter
 
         public ExcelWriter SetPrintArea()
         {
-            var data = WorksheetData[this.Backer.Index];
+            var data = this.worksheetData[this.Backer.Index];
 
             if (MaxPrintAreaCol > 0)
                 return SetPrintArea(1, 1, data.CurrentRow, MaxPrintAreaCol);
@@ -216,7 +215,7 @@ namespace Haukcode.ExcelCodeReporter
 
         public ExcelWriter SetFreezeHeader()
         {
-            var data = WorksheetData[this.Backer.Index];
+            var data = this.worksheetData[this.Backer.Index];
 
             if (data.LastHeaderRow > 0)
                 this.backer.View.FreezePanes(data.LastHeaderRow + 1, MaxFreezeCol + 1);
@@ -256,7 +255,7 @@ namespace Haukcode.ExcelCodeReporter
 
         public ExcelWriter PrintHeaderOnEachPage()
         {
-            var data = WorksheetData[this.Backer.Index];
+            var data = this.worksheetData[this.Backer.Index];
 
             if (data.FirstHeaderRow <= data.LastHeaderRow)
                 this.backer.PrinterSettings.RepeatRows =
