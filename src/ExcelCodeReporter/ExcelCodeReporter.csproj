@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>Haukcode.ExcelCodeReporter</RootNamespace>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Company />
+    <Authors>Hakan Lindestaf</Authors>
+    <RepositoryUrl>https://github.com/HakanL/ExcelCodeReporter</RepositoryUrl>
+    <PackageReleaseNotes>1.0 - Initial release</PackageReleaseNotes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="EPPlus" Version="4.5.3.2" />
+  </ItemGroup>
+
+</Project>
