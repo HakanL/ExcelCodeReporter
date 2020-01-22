@@ -1,9 +1,9 @@
-﻿using System;
+﻿using OfficeOpenXml;
+using OfficeOpenXml.Style;
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
-using OfficeOpenXml;
-using OfficeOpenXml.Style;
+using System.Linq;
 
 namespace Haukcode.ExcelCodeReporter
 {
@@ -12,34 +12,53 @@ namespace Haukcode.ExcelCodeReporter
         private ExcelPackage excelPackage;
         private ExcelWorksheet backer;
         private Action<ExcelStyle> currentHeaderStyle;
-        private int firstHeaderRow;
-        private int lastHeaderRow;
         private string title;
 
-        public int CurrentRow { get; set; }
+        private Dictionary<int, WorksheetData> WorksheetData { get; set; }
 
         public ExcelWriter()
         {
+            this.WorksheetData = new Dictionary<int, WorksheetData>();
             this.excelPackage = new ExcelPackage();
+        }
+
+        private void SetWorksheetData(int worksheetIndex, int firstHeaderRow, int lastHeaderRow, int currentRow)
+        {
+            if (this.WorksheetData.TryGetValue(worksheetIndex, out var data))
+            {
+                data.FirstHeaderRow = firstHeaderRow;
+                data.LastHeaderRow = lastHeaderRow;
+                data.CurrentRow = currentRow;
+            }
+            else
+            {
+                this.WorksheetData.Add(worksheetIndex, new WorksheetData
+                {
+                    FirstHeaderRow = firstHeaderRow,
+                    LastHeaderRow = lastHeaderRow,
+                    CurrentRow = currentRow
+                });
+            }
         }
 
         public ExcelWriter(Stream input, string title, int worksheetIndex = 1)
         {
+            this.WorksheetData = new Dictionary<int, WorksheetData>();
             this.title = title;
             this.excelPackage = new ExcelPackage(input);
 
             this.backer = this.excelPackage.Workbook.Worksheets[worksheetIndex];
-            this.firstHeaderRow = int.MaxValue;
-            this.lastHeaderRow = 0;
-            CurrentRow = 0;
+            this.SetWorksheetData(worksheetIndex, int.MaxValue, 0, 0);
         }
 
         public void UseWorksheet(int worksheetIndex)
         {
             this.backer = this.excelPackage.Workbook.Worksheets[worksheetIndex];
-            this.firstHeaderRow = int.MaxValue;
-            this.lastHeaderRow = 0;
-            CurrentRow = 0;
+        }
+
+        public void UseWorksheet(string name)
+        {
+            this.backer = this.excelPackage.Workbook.Worksheets.First(x => x.Name == name);
         }
 
         public static Stream GetStreamFromTempFile(string tempFileName)
@@ -53,7 +72,7 @@ namespace Haukcode.ExcelCodeReporter
 
         public string SaveCloseAndGetFileName()
         {
-            string tempOutputFileName = Path.GetTempFileName();
+            var tempOutputFileName = Path.GetTempFileName();
             File.Delete(tempOutputFileName);
             tempOutputFileName += ".xlsx";
 
@@ -71,9 +90,7 @@ namespace Haukcode.ExcelCodeReporter
         {
             var newExcelWorksheet = this.excelPackage.Workbook.Worksheets.Add(name);
             this.backer = newExcelWorksheet;
-            this.firstHeaderRow = int.MaxValue;
-            this.lastHeaderRow = 0;
-            CurrentRow = 0;
+            this.SetWorksheetData(backer.Index, int.MaxValue, 0, 0);
 
             return this;
         }
@@ -97,38 +114,42 @@ namespace Haukcode.ExcelCodeReporter
 
         public Row AddHeaderRow(double? height = null, Action<ExcelStyle> style = null, int? row = null)
         {
-            if (row.HasValue)
-                CurrentRow = row.Value;
-            else
-                CurrentRow++;
+            var data = WorksheetData[this.Backer.Index];
 
-            var newRow = new Row(this, this.backer, CurrentRow, defaultStyle: s =>
+            if (row.HasValue)
+                data.CurrentRow = row.Value;
+            else
+                data.CurrentRow++;
+
+            var newRow = new Row(this, this.backer, data.CurrentRow, defaultStyle: s =>
             {
                 this.currentHeaderStyle?.Invoke(s);
                 style?.Invoke(s);
             });
 
             if (height != null)
-                this.backer.Row(CurrentRow).Height = height.Value;
+                this.backer.Row(data.CurrentRow).Height = height.Value;
 
-            if (CurrentRow < this.firstHeaderRow)
-                this.firstHeaderRow = CurrentRow;
+            if (data.CurrentRow < data.FirstHeaderRow)
+                data.FirstHeaderRow = data.CurrentRow;
 
-            if (CurrentRow > this.lastHeaderRow)
-                this.lastHeaderRow = CurrentRow;
+            if (data.CurrentRow > data.LastHeaderRow)
+                data.LastHeaderRow = data.CurrentRow;
 
             return newRow;
         }
 
         public void SetHeaderRow(int row)
         {
-            CurrentRow = row;
+            var data = WorksheetData[this.Backer.Index];
 
-            if (row < this.firstHeaderRow)
-                this.firstHeaderRow = row;
+            data.CurrentRow = row;
 
-            if (row > this.lastHeaderRow)
-                this.lastHeaderRow = row;
+            if (row < data.FirstHeaderRow)
+                data.FirstHeaderRow = row;
+
+            if (row > data.LastHeaderRow)
+                data.LastHeaderRow = row;
         }
 
         public Row SetTitle(string title, Action<ExcelStyle> style = null)
@@ -143,24 +164,28 @@ namespace Haukcode.ExcelCodeReporter
 
         public Row AddRow(Action<ExcelStyle> style = null, int? row = null)
         {
-            if (row.HasValue)
-                CurrentRow = row.Value;
-            else
-                CurrentRow++;
+            var data = WorksheetData[this.Backer.Index];
 
-            var newRow = new Row(this, this.backer, CurrentRow, style);
+            if (row.HasValue)
+                data.CurrentRow = row.Value;
+            else
+                data.CurrentRow++;
+
+            var newRow = new Row(this, this.backer, data.CurrentRow, style);
 
             return newRow;
         }
 
         public Row AddRow(object value, Action<ExcelStyle> style = null, int? row = null)
         {
-            if (row.HasValue)
-                CurrentRow = row.Value;
-            else
-                CurrentRow++;
+            var data = WorksheetData[this.Backer.Index];
 
-            var newRow = new Row(this, this.backer, CurrentRow, style);
+            if (row.HasValue)
+                data.CurrentRow = row.Value;
+            else
+                data.CurrentRow++;
+
+            var newRow = new Row(this, this.backer, data.CurrentRow, style);
 
             newRow.Add(value);
 
@@ -169,8 +194,10 @@ namespace Haukcode.ExcelCodeReporter
 
         public ExcelWriter SetPrintArea()
         {
+            var data = WorksheetData[this.Backer.Index];
+
             if (MaxPrintAreaCol > 0)
-                return SetPrintArea(1, 1, CurrentRow, MaxPrintAreaCol);
+                return SetPrintArea(1, 1, data.CurrentRow, MaxPrintAreaCol);
             else
                 return this;
         }
@@ -189,8 +216,10 @@ namespace Haukcode.ExcelCodeReporter
 
         public ExcelWriter SetFreezeHeader()
         {
-            if (this.lastHeaderRow > 0)
-                this.backer.View.FreezePanes(this.lastHeaderRow + 1, MaxFreezeCol + 1);
+            var data = WorksheetData[this.Backer.Index];
+
+            if (data.LastHeaderRow > 0)
+                this.backer.View.FreezePanes(data.LastHeaderRow + 1, MaxFreezeCol + 1);
 
             return this;
         }
@@ -227,8 +256,11 @@ namespace Haukcode.ExcelCodeReporter
 
         public ExcelWriter PrintHeaderOnEachPage()
         {
-            if (this.firstHeaderRow <= this.lastHeaderRow)
-                this.backer.PrinterSettings.RepeatRows = new ExcelAddress($"{this.firstHeaderRow}:{this.lastHeaderRow}");
+            var data = WorksheetData[this.Backer.Index];
+
+            if (data.FirstHeaderRow <= data.LastHeaderRow)
+                this.backer.PrinterSettings.RepeatRows =
+                    new ExcelAddress($"{data.FirstHeaderRow}:{data.LastHeaderRow}");
 
             return this;
         }
@@ -253,5 +285,12 @@ namespace Haukcode.ExcelCodeReporter
 
             return this;
         }
+    }
+
+    public class WorksheetData
+    {
+        public int FirstHeaderRow { get; set; }
+        public int LastHeaderRow { get; set; }
+        public int CurrentRow { get; set; }
     }
 }
