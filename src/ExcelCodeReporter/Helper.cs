@@ -13,6 +13,9 @@ namespace Haukcode.ExcelCodeReporter
         public const string FormatMoney = "$###,###,##0.00";
         public const string FormatAccounting = @"_(""$""* #,##0.00_);_(""$""* \(#,##0.00\);_(""$""* ""-""??_);_(@_)";
         public const string FormatDate = "M/d/yyyy";
+        public const string FormatDateZero = "MM/dd/yyyy";
+        public const string FormatDateTime = "M/d/yyyy HH:mm";
+        public const string FormatDateTimeLong = "MM/dd/yyyy hh:mm AM/PM";
         public const string FormatPercent1 = "#0.0%";
 
         public static void ApplyDefaultStyling(ExcelWriter ws, string worksheetName, string reportTitle)

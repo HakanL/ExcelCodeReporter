@@ -30,10 +30,10 @@ namespace Haukcode.ExcelCodeReporter
             this.currentCol++;
 
             this.backer.SetValue(this.row, this.currentCol, caption, style: s =>
-                {
-                    this.defaultStyle?.Invoke(s);
-                    style?.Invoke(s);
-                });
+            {
+                this.defaultStyle?.Invoke(s);
+                style?.Invoke(s);
+            });
 
             if (width != null)
                 this.backer.Column(this.currentCol).Width = width.Value;

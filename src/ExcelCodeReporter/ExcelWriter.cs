@@ -50,14 +50,16 @@ namespace Haukcode.ExcelCodeReporter
             this.SetWorksheetData(worksheetIndex, int.MaxValue, 0, 0);
         }
 
-        public void UseWorksheet(int worksheetIndex)
+        public ExcelWriter UseWorksheet(int worksheetIndex)
         {
             this.backer = this.excelPackage.Workbook.Worksheets[worksheetIndex];
+            return this;
         }
 
-        public void UseWorksheet(string name)
+        public ExcelWriter UseWorksheet(string name)
         {
             this.backer = this.excelPackage.Workbook.Worksheets.First(x => x.Name == name);
+            return this;
         }
 
         public static Stream GetStreamFromTempFile(string tempFileName)
