@@ -9,10 +9,9 @@ namespace Haukcode.ExcelCodeReporter
 {
     public class ExcelWriter : IDisposable
     {
-        private Dictionary<int, WorksheetData> worksheetData;
+        private readonly Dictionary<int, WorksheetData> worksheetData;
         private Action<ExcelStyle> currentHeaderStyle;
         private ExcelPackage excelPackage;
-        private ExcelWorksheet backer;
         private string title;
 
         public ExcelWriter()
@@ -46,19 +45,19 @@ namespace Haukcode.ExcelCodeReporter
             this.title = title;
             this.excelPackage = new ExcelPackage(input);
 
-            this.backer = this.excelPackage.Workbook.Worksheets[worksheetIndex];
-            this.SetWorksheetData(worksheetIndex, int.MaxValue, 0, 0);
+            Backer = this.excelPackage.Workbook.Worksheets[worksheetIndex];
+            SetWorksheetData(worksheetIndex, int.MaxValue, 0, 0);
         }
 
         public ExcelWriter UseWorksheet(int worksheetIndex)
         {
-            this.backer = this.excelPackage.Workbook.Worksheets[worksheetIndex];
+            Backer = this.excelPackage.Workbook.Worksheets[worksheetIndex];
             return this;
         }
 
         public ExcelWriter UseWorksheet(string name)
         {
-            this.backer = this.excelPackage.Workbook.Worksheets.First(x => x.Name == name);
+            Backer = this.excelPackage.Workbook.Worksheets.First(x => x.Name == name);
             return this;
         }
 
@@ -73,7 +72,7 @@ namespace Haukcode.ExcelCodeReporter
 
         public string SaveCloseAndGetFileName()
         {
-            var tempOutputFileName = Path.GetTempFileName();
+            string tempOutputFileName = Path.GetTempFileName();
             File.Delete(tempOutputFileName);
             tempOutputFileName += ".xlsx";
 
@@ -85,13 +84,13 @@ namespace Haukcode.ExcelCodeReporter
             return tempOutputFileName;
         }
 
-        public ExcelWorksheet Backer => this.backer;
+        public ExcelWorksheet Backer { get; private set; }
 
         public ExcelWriter AddWorksheet(string name)
         {
             var newExcelWorksheet = this.excelPackage.Workbook.Worksheets.Add(name);
-            this.backer = newExcelWorksheet;
-            this.SetWorksheetData(backer.Index, int.MaxValue, 0, 0);
+            Backer = newExcelWorksheet;
+            SetWorksheetData(Backer.Index, int.MaxValue, 0, 0);
 
             return this;
         }
@@ -115,21 +114,21 @@ namespace Haukcode.ExcelCodeReporter
 
         public Row AddHeaderRow(double? height = null, Action<ExcelStyle> style = null, int? row = null)
         {
-            var data = this.worksheetData[this.Backer.Index];
+            var data = this.worksheetData[Backer.Index];
 
             if (row.HasValue)
                 data.CurrentRow = row.Value;
             else
                 data.CurrentRow++;
 
-            var newRow = new Row(this, this.backer, data.CurrentRow, defaultStyle: s =>
+            var newRow = new Row(this, Backer, data.CurrentRow, defaultStyle: s =>
             {
                 this.currentHeaderStyle?.Invoke(s);
                 style?.Invoke(s);
             });
 
             if (height != null)
-                this.backer.Row(data.CurrentRow).Height = height.Value;
+                Backer.Row(data.CurrentRow).Height = height.Value;
 
             if (data.CurrentRow < data.FirstHeaderRow)
                 data.FirstHeaderRow = data.CurrentRow;
@@ -142,7 +141,7 @@ namespace Haukcode.ExcelCodeReporter
 
         public void SetHeaderRow(int row)
         {
-            var data = this.worksheetData[this.Backer.Index];
+            var data = this.worksheetData[Backer.Index];
 
             data.CurrentRow = row;
 
@@ -165,28 +164,28 @@ namespace Haukcode.ExcelCodeReporter
 
         public Row AddRow(Action<ExcelStyle> style = null, int? row = null)
         {
-            var data = this.worksheetData[this.Backer.Index];
+            var data = this.worksheetData[Backer.Index];
 
             if (row.HasValue)
                 data.CurrentRow = row.Value;
             else
                 data.CurrentRow++;
 
-            var newRow = new Row(this, this.backer, data.CurrentRow, style);
+            var newRow = new Row(this, Backer, data.CurrentRow, style);
 
             return newRow;
         }
 
         public Row AddRow(object value, Action<ExcelStyle> style = null, int? row = null)
         {
-            var data = this.worksheetData[this.Backer.Index];
+            var data = this.worksheetData[Backer.Index];
 
             if (row.HasValue)
                 data.CurrentRow = row.Value;
             else
                 data.CurrentRow++;
 
-            var newRow = new Row(this, this.backer, data.CurrentRow, style);
+            var newRow = new Row(this, Backer, data.CurrentRow, style);
 
             newRow.Add(value);
 
@@ -195,7 +194,7 @@ namespace Haukcode.ExcelCodeReporter
 
         public ExcelWriter SetPrintArea()
         {
-            var data = this.worksheetData[this.Backer.Index];
+            var data = this.worksheetData[Backer.Index];
 
             if (MaxPrintAreaCol > 0)
                 return SetPrintArea(1, 1, data.CurrentRow, MaxPrintAreaCol);
@@ -210,88 +209,83 @@ namespace Haukcode.ExcelCodeReporter
 
         public ExcelWriter SetPrintArea(int fromRow, int fromCol, int toRow, int toCol)
         {
-            this.backer.PrinterSettings.PrintArea = this.backer.Cells[fromRow, fromCol, toRow, toCol];
+            Backer.PrinterSettings.PrintArea = Backer.Cells[fromRow, fromCol, toRow, toCol];
 
             return this;
         }
 
         public ExcelWriter SetFreezeHeader()
         {
-            var data = this.worksheetData[this.Backer.Index];
+            var data = this.worksheetData[Backer.Index];
 
             if (data.LastHeaderRow > 0)
-                this.backer.View.FreezePanes(data.LastHeaderRow + 1, MaxFreezeCol + 1);
+                Backer.View.FreezePanes(data.LastHeaderRow + 1, MaxFreezeCol + 1);
 
             return this;
         }
 
         public ExcelWriter SetOrientation(eOrientation orientation)
         {
-            this.backer.PrinterSettings.Orientation = orientation;
+            Backer.PrinterSettings.Orientation = orientation;
 
             return this;
         }
 
         public ExcelWriter SetFitOnePage()
         {
-            this.backer.PrinterSettings.FitToPage = true;
+            Backer.PrinterSettings.FitToPage = true;
 
             return this;
         }
 
         public ExcelWriter SetFitToWidth(int pages = 1)
         {
-            this.backer.PrinterSettings.FitToPage = true;
-            this.backer.PrinterSettings.FitToWidth = pages;
-            this.backer.PrinterSettings.FitToHeight = 0;
+            Backer.PrinterSettings.FitToPage = true;
+            Backer.PrinterSettings.FitToWidth = pages;
+            Backer.PrinterSettings.FitToHeight = 0;
 
             return this;
         }
 
         public ExcelWriter PrintGridLines(bool value = true)
         {
-            this.backer.PrinterSettings.ShowGridLines = value;
+            Backer.PrinterSettings.ShowGridLines = value;
 
             return this;
         }
 
         public ExcelWriter PrintHeaderOnEachPage()
         {
-            var data = this.worksheetData[this.Backer.Index];
+            var data = this.worksheetData[Backer.Index];
 
             if (data.FirstHeaderRow <= data.LastHeaderRow)
-                this.backer.PrinterSettings.RepeatRows =
+            {
+                Backer.PrinterSettings.RepeatRows =
                     new ExcelAddress($"{data.FirstHeaderRow}:{data.LastHeaderRow}");
+            }
 
             return this;
         }
 
         public ExcelWriter PrintPageNumberInFooter(string pageNumberString)
         {
-            this.backer.HeaderFooter.OddFooter.RightAlignedText = string.Format(pageNumberString, ExcelHeaderFooter.PageNumber, ExcelHeaderFooter.NumberOfPages);
+            Backer.HeaderFooter.OddFooter.RightAlignedText = string.Format(pageNumberString, ExcelHeaderFooter.PageNumber, ExcelHeaderFooter.NumberOfPages);
 
             return this;
         }
 
         public ExcelWriter PrintTitleInFooter()
         {
-            this.backer.HeaderFooter.OddFooter.LeftAlignedText = this.title.Replace("&", "&&");
+            Backer.HeaderFooter.OddFooter.LeftAlignedText = this.title.Replace("&", "&&");
 
             return this;
         }
 
         public ExcelWriter PrintCenteredTextInFooter(string value)
         {
-            this.backer.HeaderFooter.OddFooter.CenteredText = value;
+            Backer.HeaderFooter.OddFooter.CenteredText = value;
 
             return this;
         }
-    }
-
-    public class WorksheetData
-    {
-        public int FirstHeaderRow { get; set; }
-        public int LastHeaderRow { get; set; }
-        public int CurrentRow { get; set; }
     }
 }
