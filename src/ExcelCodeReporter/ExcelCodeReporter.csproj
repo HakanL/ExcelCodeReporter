@@ -6,9 +6,13 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Company />
-    <Authors>Hakan Lindestaf</Authors>
+    <Authors>Hakan Lindestaf, Michael Kaltner</Authors>
     <RepositoryUrl>https://github.com/HakanL/ExcelCodeReporter</RepositoryUrl>
     <PackageReleaseNotes>1.0 - Initial release</PackageReleaseNotes>
+    <PackageId>Haukcode.ExcelCodeReporter</PackageId>
+    <Product>Haukcode ExcelCodeReporter</Product>
+    <Description>Build simple and powerful reports in .NET Core code with EPPlus native Excel output</Description>
+    <Copyright>(C) Copyright 2020, Hakan Lindestaf</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
