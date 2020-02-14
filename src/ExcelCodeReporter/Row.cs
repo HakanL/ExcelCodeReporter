@@ -8,10 +8,9 @@ namespace Haukcode.ExcelCodeReporter
 {
     public class Row
     {
-        private ExcelWriter writer;
-        private ExcelWorksheet backer;
-        private int row;
-        private int currentCol;
+        private readonly ExcelWriter writer;
+        private readonly ExcelWorksheet backer;
+        private readonly int row;
         private Action<ExcelStyle> defaultStyle;
 
         internal Row(ExcelWriter writer, ExcelWorksheet backer, int row, Action<ExcelStyle> defaultStyle)
@@ -20,32 +19,32 @@ namespace Haukcode.ExcelCodeReporter
             this.backer = backer;
             this.row = row;
             this.defaultStyle = defaultStyle;
-            this.currentCol = 0;
+            CurrentCol = 0;
         }
 
-        public int CurrentCol => this.currentCol;
+        public int CurrentCol { get; private set; }
 
         public Row AddHeader(object caption, double? width = null, Action<ExcelStyle> style = null)
         {
-            this.currentCol++;
+            CurrentCol++;
 
-            this.backer.SetValue(this.row, this.currentCol, caption, style: s =>
+            this.backer.SetValue(this.row, CurrentCol, caption, style: s =>
             {
                 this.defaultStyle?.Invoke(s);
                 style?.Invoke(s);
             });
 
             if (width != null)
-                this.backer.Column(this.currentCol).Width = width.Value;
+                this.backer.Column(CurrentCol).Width = width.Value;
 
             return this;
         }
 
-        public Row Add(object value, string format = null, Action<ExcelStyle> style = null)
+        public Row Add(object value = null, string format = null, Action<ExcelStyle> style = null)
         {
-            this.currentCol++;
+            CurrentCol++;
 
-            return SetAt(this.currentCol, value, format, style);
+            return SetAt(CurrentCol, value, format, style);
         }
 
         public Row SetAt(int col, object value, string format = null, Action<ExcelStyle> style = null)
@@ -61,16 +60,29 @@ namespace Haukcode.ExcelCodeReporter
             return this;
         }
 
+        public Row SetFormulaAt(int col, string formula, string format = null, Action<ExcelStyle> style = null)
+        {
+            this.backer.SetFormula(this.row, col, formula, style: s =>
+            {
+                this.defaultStyle?.Invoke(s);
+                style?.Invoke(s);
+                if (format != null)
+                    s.Numberformat.Format = format;
+            });
+
+            return this;
+        }
+
         public Row SetMaxFreezeColumn()
         {
-            this.writer.MaxFreezeCol = this.currentCol;
+            this.writer.MaxFreezeCol = CurrentCol;
 
             return this;
         }
 
         public Row SetMaxPrintAreaColumn()
         {
-            this.writer.MaxPrintAreaCol = this.currentCol;
+            this.writer.MaxPrintAreaCol = CurrentCol;
 
             return this;
         }

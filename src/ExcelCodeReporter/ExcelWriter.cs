@@ -20,6 +20,22 @@ namespace Haukcode.ExcelCodeReporter
             this.excelPackage = new ExcelPackage();
         }
 
+        protected WorksheetData CurrentWorksheetData => this.worksheetData[Backer.Index];
+
+        public int CurrentRow
+        {
+            get
+            {
+                return CurrentWorksheetData.CurrentRow;
+            }
+            set
+            {
+                CurrentWorksheetData.CurrentRow = value;
+            }
+        }
+
+        public int LastHeaderRow => CurrentWorksheetData.LastHeaderRow;
+
         private void SetWorksheetData(int worksheetIndex, int firstHeaderRow, int lastHeaderRow, int currentRow)
         {
             if (this.worksheetData.TryGetValue(worksheetIndex, out var data))
@@ -51,6 +67,17 @@ namespace Haukcode.ExcelCodeReporter
 
         public ExcelWriter UseWorksheet(int worksheetIndex)
         {
+            // Make sure it exists in our internal dictionary
+            if (!this.worksheetData.TryGetValue(worksheetIndex, out var data))
+            {
+                this.worksheetData.Add(worksheetIndex, new WorksheetData
+                {
+                    FirstHeaderRow = int.MaxValue,
+                    LastHeaderRow = 0,
+                    CurrentRow = 0
+                });
+            }
+
             Backer = this.excelPackage.Workbook.Worksheets[worksheetIndex];
             return this;
         }

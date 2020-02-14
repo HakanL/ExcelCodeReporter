@@ -17,5 +17,17 @@ namespace Haukcode.ExcelCodeReporter
                 style?.Invoke(range.Style);
             }
         }
+
+        public static void SetFormula(this ExcelWorksheet ws, int row, int col, string formula, string format = null, Action<ExcelStyle> style = null)
+        {
+            using (var range = ws.Cells[row, col])
+            {
+                range.Formula = formula;
+                if (format != null)
+                    range.Style.Numberformat.Format = format;
+
+                style?.Invoke(range.Style);
+            }
+        }
     }
 }
