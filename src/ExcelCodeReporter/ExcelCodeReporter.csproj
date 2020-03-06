@@ -12,14 +12,16 @@
 1.0.1 - Added SetFormula extension
 1.0.2 - Added SetFormulaAt method
 1.0.3 - Bug fix for UseWorksheet
-1.0.4 - Another bug fix for WorksheetIndex</PackageReleaseNotes>
+1.0.4 - Another bug fix for WorksheetIndex
+1.0.6 - One more fix for WorksheetIndex
+</PackageReleaseNotes>
     <PackageId>Haukcode.ExcelCodeReporter</PackageId>
     <Product>Haukcode ExcelCodeReporter</Product>
     <Description>Build simple and powerful reports in .NET Core code with EPPlus native Excel output</Description>
     <Copyright>(C) Copyright 2020, Hakan Lindestaf</Copyright>
-    <AssemblyVersion>1.0.4.0</AssemblyVersion>
-    <FileVersion>1.0.4.0</FileVersion>
-    <Version>1.0.4</Version>
+    <AssemblyVersion>1.0.6.0</AssemblyVersion>
+    <FileVersion>1.0.6.0</FileVersion>
+    <Version>1.0.6</Version>
   </PropertyGroup>
 
   <ItemGroup>

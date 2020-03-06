@@ -55,20 +55,20 @@ namespace Haukcode.ExcelCodeReporter
             }
         }
 
-        public ExcelWriter(Stream input, string title, int worksheetIndex = 1)
+        public ExcelWriter(Stream input, string title, int worksheetIndex = 0)
         {
             this.worksheetData = new Dictionary<int, WorksheetData>();
             this.title = title;
             this.excelPackage = new ExcelPackage(input);
 
-            Backer = this.excelPackage.Workbook.Worksheets[worksheetIndex - 1];
+            Backer = this.excelPackage.Workbook.Worksheets[worksheetIndex];
             SetWorksheetData(worksheetIndex, int.MaxValue, 0, 0);
         }
 
         public ExcelWriter UseWorksheet(int worksheetIndex)
         {
             // Make sure it exists in our internal dictionary
-            if (!this.worksheetData.TryGetValue(worksheetIndex, out var data))
+            if (!this.worksheetData.ContainsKey(worksheetIndex))
             {
                 this.worksheetData.Add(worksheetIndex, new WorksheetData
                 {
@@ -78,7 +78,7 @@ namespace Haukcode.ExcelCodeReporter
                 });
             }
 
-            Backer = this.excelPackage.Workbook.Worksheets[worksheetIndex - 1];
+            Backer = this.excelPackage.Workbook.Worksheets[worksheetIndex];
             return this;
         }
 
