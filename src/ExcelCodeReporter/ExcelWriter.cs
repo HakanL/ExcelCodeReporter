@@ -61,7 +61,7 @@ namespace Haukcode.ExcelCodeReporter
             this.title = title;
             this.excelPackage = new ExcelPackage(input);
 
-            Backer = this.excelPackage.Workbook.Worksheets[worksheetIndex];
+            Backer = this.excelPackage.Workbook.Worksheets[worksheetIndex - 1];
             SetWorksheetData(worksheetIndex, int.MaxValue, 0, 0);
         }
 
@@ -78,7 +78,7 @@ namespace Haukcode.ExcelCodeReporter
                 });
             }
 
-            Backer = this.excelPackage.Workbook.Worksheets[worksheetIndex];
+            Backer = this.excelPackage.Workbook.Worksheets[worksheetIndex - 1];
             return this;
         }
 
